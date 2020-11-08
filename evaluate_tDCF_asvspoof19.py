@@ -1,12 +1,16 @@
 import sys
+import os
 import numpy as np
-import eval_metrics as em
+import eval_metrics as em # eval_metrics.py
 import matplotlib.pyplot as plt
 
+path = 'eval/model_logical_spect_100_32_5e-05/e'
 # Replace CM scores with your own scores or provide score file as the first argument.
-cm_score_file =  'scores/output.txt' #'scores/cm_dev.txt'
+cm_score_file =  os.path.join(path, 'cm_score_23.txt') #'scores/cm_dev.txt'
 # Replace ASV scores with organizers' scores or provide score file as the second argument.
-asv_score_file = 'scores/asv_dev.txt'
+asv_score_file = 'baseline/tDCF_v1/scores/asv_dev.txt'
+
+save_path = os.path.join(path, 'score_23.txt')
 
 args = sys.argv
 if len(args) > 1:
@@ -36,11 +40,12 @@ asv_keys = asv_data[:, 1]
 asv_scores = asv_data[:, 2].astype(np.float)
 
 # Load CM scores
-cm_data = np.genfromtxt(cm_score_file, dtype=str)
+cm_data = np.genfromtxt(cm_score_file, dtype=str) # np.genfromtxt 二元数组 txt每一行为一行，行内按分隔符分割
 cm_utt_id = cm_data[:, 0]
 cm_sources = cm_data[:, 1]
 cm_keys = cm_data[:, 2]
-cm_scores = cm_data[:, 3].astype(np.float)
+cm_scores = cm_data[:, 3].astype(np.float) # type = <class 'numpy.ndarray'>
+print('cm_scores.size = {}'.format(cm_scores.size))
 
 # Extract target, nontarget, and spoof scores from the ASV scores
 tar_asv = asv_scores[asv_keys == 'target']
@@ -48,8 +53,10 @@ non_asv = asv_scores[asv_keys == 'nontarget']
 spoof_asv = asv_scores[asv_keys == 'spoof']
 
 # Extract bona fide (real human) and spoof scores from the CM scores
-bona_cm = cm_scores[cm_keys == 'bonafide']
-spoof_cm = cm_scores[cm_keys == 'spoof']
+bona_cm = cm_scores[cm_keys == 'bonafide'] # 仅保留为真的
+spoof_cm = cm_scores[cm_keys == 'spoof'] # 仅保留为假的
+print('bona_cm.size = {}'.format(bona_cm.size))
+print('spoof_cm.size = {}'.format(spoof_cm.size))
 
 # EERs of the standalone systems and fix ASV operating point to EER threshold
 eer_asv, asv_threshold = em.compute_eer(tar_asv, non_asv)
@@ -79,6 +86,12 @@ print('   EER            = {:8.9f} % (Equal error rate for countermeasure)'.form
 print('\nTANDEM')
 print('   min-tDCF       = {:8.9f}'.format(min_tDCF))
 
+with open(save_path, 'w') as f:
+    f.write('CM SYSTE\n')
+    f.write('   EER            = {:8.9f} % (Equal error rate for countermeasure)\n'.format(eer_cm * 100))
+    f.write('TANDEM\n')
+    f.write('   min-tDCF       = {:8.9f}\n'.format(min_tDCF))
+
 
 # Visualize ASV scores and CM scores
 plt.figure()
@@ -99,7 +112,7 @@ plt.legend()
 plt.xlabel('CM score')
 #plt.ylabel('Density')
 plt.title('CM score histogram')
-
+plt.savefig(os.path.join(path, 'score_his.jpg'))
 
 # Plot t-DCF as function of the CM threshold.
 plt.figure()
@@ -113,4 +126,5 @@ plt.legend(('t-DCF', 'min t-DCF ({:.9f})'.format(min_tDCF), 'Arbitrarily bad CM 
 plt.xlim([np.min(CM_thresholds), np.max(CM_thresholds)])
 plt.ylim([0, 1.5])
 
+plt.savefig(os.path.join(path, 't-DCF.jpg'))
 plt.show()

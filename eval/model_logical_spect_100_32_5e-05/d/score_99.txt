@@ -1,0 +1,4 @@
+CM SYSTE
+   EER            = 0.824717980 % (Equal error rate for countermeasure)
+TANDEM
+   min-tDCF       = 0.028953212

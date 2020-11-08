@@ -27,9 +27,11 @@ def compute_det_curve(target_scores, nontarget_scores):
     labels = labels[indices]
 
     # Compute false rejection and false acceptance rates
-    tar_trial_sums = np.cumsum(labels)
+    tar_trial_sums = np.cumsum(labels) #计算轴向元素累加和，返回由中间结果组成的数组
+    # 可以得到数X左边有多少是真正为True的，当X为阈值时这个数就是FR
     nontarget_trial_sums = nontarget_scores.size - (np.arange(1, n_scores + 1) - tar_trial_sums)
-
+    # 可以得到数X右边有多少是真正为False的，当X为阈值时这个数就是FA
+    
     frr = np.concatenate((np.atleast_1d(0), tar_trial_sums / target_scores.size))  # false rejection rates
     far = np.concatenate((np.atleast_1d(1), nontarget_trial_sums / nontarget_scores.size))  # false acceptance rates
     thresholds = np.concatenate((np.atleast_1d(all_scores[indices[0]] - 0.001), all_scores[indices]))  # Thresholds are the sorted scores
@@ -40,7 +42,7 @@ def compute_det_curve(target_scores, nontarget_scores):
 def compute_eer(target_scores, nontarget_scores):
     """ Returns equal error rate (EER) and the corresponding threshold. """
     frr, far, thresholds = compute_det_curve(target_scores, nontarget_scores)
-    abs_diffs = np.abs(frr - far)
+    abs_diffs = np.abs(frr - far) #frr far相距最小时，取两者平均值，近似为EER
     min_index = np.argmin(abs_diffs)
     eer = np.mean((frr[min_index], far[min_index]))
     return eer, thresholds[min_index]
